@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECharts调试页面</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        #chart {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ECharts图表调试页面</h1>
+        
+        <div class="debug-info">
+            <h3>📋 测试说明</h3>
+            <p>此页面用于测试和调试ECharts图表渲染，验证数据格式和图表配置是否正确。</p>
+        </div>
+
+        <button onclick="testWithSampleData()">测试示例数据</button>
+        <button onclick="testBackendAPI()">测试后端API</button>
+        <button onclick="clearChart()">清空图表</button>
+
+        <div id="chart"></div>
+
+        <div class="debug-info">
+            <h3>🔍 调试信息</h3>
+            <div id="debug-output">
+                <p>点击上方按钮开始测试...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化图表实例
+        const chart = echarts.init(document.getElementById('chart'));
+        
+        function log(message, data = null) {
+            const debugOutput = document.getElementById('debug-output');
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            
+            if (data) {
+                logEntry += '\n' + JSON.stringify(data, null, 2);
+            }
+            
+            debugOutput.innerHTML = `<pre>${logEntry}</pre>` + debugOutput.innerHTML;
+        }
+
+        // 示例数据 - 模拟后端返回的数据格式
+        const sampleData = {
+            data: {
+                title: "CPU指标图表 - 测试数据",
+                x_data: [
+                    "2025-12-04 14:00:00",
+                    "2025-12-04 14:01:00", 
+                    "2025-12-04 14:02:00",
+                    "2025-12-04 14:03:00",
+                    "2025-12-04 14:04:00"
+                ],
+                legend_data: ["cpu_usage", "cpu_load"],
+                series_data: [
+                    {
+                        name: "cpu_usage",
+                        value: [45.2, 48.7, 52.1, 49.3, 46.8]
+                    },
+                    {
+                        name: "cpu_load", 
+                        value: [1.2, 1.4, 1.6, 1.3, 1.1]
+                    }
+                ],
+                unit: "%"
+            }
+        };
+
+        function renderChart(apiData) {
+            try {
+                log("开始渲染图表", apiData);
+
+                if (!apiData) {
+                    throw new Error('数据为空');
+                }
+
+                // 兼容不同的数据结构
+                const data = apiData.data || apiData;
+                if (!data) {
+                    throw new Error('数据结构错误');
+                }
+
+                const { title, x_data, legend_data, series_data, unit } = data;
+
+                if (!x_data || !legend_data || !series_data) {
+                    throw new Error('缺少必要的数据字段');
+                }
+
+                // 转换数据格式为ECharts需要的格式
+                const chartDataFormatted = x_data.map((time, index) => {
+                    const item = { time };
+                    series_data.forEach(series => {
+                        item[series.name] = series.value[index];
+                    });
+                    return item;
+                });
+
+                log("转换后的图表数据", chartDataFormatted);
+
+                // 创建series配置
+                const series = legend_data.map(name => ({
+                    name: name,
+                    type: 'line',
+                    showSymbol: false,
+                    lineStyle: {
+                        width: 3
+                    },
+                    endLabel: {
+                        show: true,
+                        formatter: function(params) {
+                            return params.seriesName;
+                        }
+                    },
+                    labelLayout: {
+                        moveOverlap: 'shiftY'
+                    },
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    encode: {
+                        x: 'time',
+                        y: name,
+                        tooltip: name
+                    }
+                }));
+
+                const option = {
+                    animationDuration: 1000,
+                    title: {
+                        text: title,
+                        top: 10,
+                        left: 'center',
+                        textStyle: {
+                            fontSize: 18,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    tooltip: {
+                        order: 'valueDesc',
+                        trigger: 'axis',
+                        confine: true,
+                        backgroundColor: 'rgba(50, 50, 50, 0.9)',
+                        borderColor: 'rgba(50, 50, 50, 0.9)',
+                        textStyle: {
+                            color: '#fff'
+                        },
+                        axisPointer: {
+                            type: 'cross',
+                            crossStyle: {
+                                color: '#999'
+                            },
+                            label: {
+                                backgroundColor: '#283b56'
+                            }
+                        },
+                        extraCssText: 'min-width: 180px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);',
+                        padding: [10, 12],
+                        formatter: function(params) {
+                            let result = params[0].axisValue.substring(11, 19) + '<br/>';
+                            params.forEach(param => {
+                                result += param.marker + param.seriesName + ': ' + param.value[param.seriesName] + '<br/>';
+                            });
+                            return result;
+                        }
+                    },
+                    legend: {
+                        data: legend_data,
+                        top: 40,
+                        icon: 'roundRect',
+                        itemGap: 25,
+                        textStyle: {
+                            fontSize: 12,
+                            fontWeight: 'bold'
+                        }
+                    },
+                    xAxis: {
+                        type: 'category',
+                        name: '时间',
+                        nameLocation: 'middle',
+                        nameGap: 30,
+                        boundaryGap: false,
+                        axisLine: {
+                            lineStyle: {
+                                color: '#A9A9A9'
+                            }
+                        },
+                        axisTick: {
+                            show: false
+                        },
+                        axisLabel: {
+                            color: '#666',
+                            fontWeight: 'bold',
+                            formatter: function(value) {
+                                return value.substring(11, 19);
+                            }
+                        },
+                        splitLine: {
+                            show: true,
+                            lineStyle: {
+                                color: '#f0f0f0',
+                                type: 'dashed'
+                            }
+                        }
+                    },
+                    yAxis: {
+                        name: `单位 (${unit})`,
+                        nameGap: 50,
+                        nameLocation: 'middle',
+                        type: 'value',
+                        axisLine: {
+                            show: true,
+                            lineStyle: {
+                                color: '#A9A9A9'
+                            }
+                        }
+                    },
+                    grid: {
+                        right: 140,
+                        left: 80,
+                        top: 100,
+                        bottom: 60
+                    },
+                    dataset: {
+                        source: chartDataFormatted
+                    },
+                    series: series
+                };
+
+                log("ECharts配置", option);
+
+                chart.setOption(option, true);
+                log("✅ 图表渲染成功");
+
+            } catch (error) {
+                log("❌ 图表渲染失败: " + error.message, error);
+            }
+        }
+
+        function testWithSampleData() {
+            log("🧪 开始测试示例数据");
+            renderChart(sampleData);
+        }
+
+        async function testBackendAPI() {
+            log("🌐 开始测试后端API");
+            
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: "查询集群lf-lan-ha1在时间范围2025-12-04 14:00:00到2025-12-04 14:10:10的CPU指标数据"
+                    })
+                });
+
+                log("API响应状态: " + response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                log("API返回数据", result);
+
+                if (result.success && result.data && result.data.chart_data) {
+                    renderChart(result.data.chart_data);
+                } else {
+                    log("❌ API返回数据格式错误", result);
+                }
+
+            } catch (error) {
+                log("❌ API测试失败: " + error.message, error);
+            }
+        }
+
+        function clearChart() {
+            chart.clear();
+            log("🧹 图表已清空");
+        }
+
+        // 窗口大小改变时重新调整图表
+        window.addEventListener('resize', () => {
+            chart.resize();
+        });
+
+        // 页面加载完成后的初始化
+        window.onload = () => {
+            log("📄 调试页面加载完成");
+            log("💡 提示：请先确保后端服务器运行在 http://localhost:5000");
+        };
+    </script>
+</body>
+</html>
