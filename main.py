@@ -217,7 +217,7 @@ if __name__ == "__main__":
     # 1. 定义要注入到图中的初始状态（测试用例）
     initial_state = {
         "messages": [
-            HumanMessage(content="查询集群lf-lan-ha1在时间范围2025-12-04 14:00:00到2025-12-04 14:10:10的CPU指标数据")
+            HumanMessage(content="查询集群lf-lan-ha1在时间范围2025-12-05 09:00:00到2025-12-05 09:30:10的CPU指标数据")
         ]
     }
     

@@ -1,106 +1,116 @@
 <template>
   <div class="cpu-analyzer">
-    <!-- 结果展示区域 -->
-    <div v-if="hasResults" class="results-section">
-      <!-- 图表展示 -->
-      <el-card class="chart-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <el-icon><DataLine /></el-icon>
-            <span>CPU指标图表</span>
-            <el-button
-              v-if="chartData"
-              @click="refreshChart"
-              :icon="Refresh"
-              circle
-              size="small"
-              style="margin-left: auto;"
-            />
-          </div>
-        </template>
-        
-        <div
-          ref="chartContainer"
-          class="chart-container"
-          v-loading="loading"
-          element-loading-text="正在生成图表..."
-        ></div>
-      </el-card>
+    <!-- 对话框容器 -->
+    <div class="dialog-container">
+      <!-- 标题 -->
+      <div class="dialog-title">
+        <el-icon><TrendCharts /></el-icon>
+        应用、集群、主机维度指标查询
+      </div>
 
-      <!-- 分析结果 -->
-      <el-card class="analysis-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <el-icon><Document /></el-icon>
-            <span>AI分析结果</span>
-          </div>
-        </template>
-        
-        <div class="analysis-result">
-          <pre v-if="analysisResult">{{ analysisResult }}</pre>
-          <el-empty v-else description="暂无分析结果" />
-        </div>
-      </el-card>
-    </div>
-
-    <!-- 空状态 -->
-    <el-empty
-      v-if="!hasResults && !loading"
-      description="请输入查询条件开始分析"
-      :image-size="200"
-    />
-
-    <!-- 查询输入区域 -->
-    <el-card class="query-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <el-icon><Search /></el-icon>
-          <span>应用、集群、主机维度指标查询</span>
-        </div>
-      </template>
-      
-      <el-form @submit.prevent="handleAnalyze">
-        <el-form-item>
+      <!-- 预备阶段：输入区域 -->
+      <div v-if="!hasResults && !loading" class="input-section">
+        <div class="input-wrapper">
           <el-input
             v-model="query"
             type="textarea"
             :rows="3"
-            placeholder="请输入您的查询，例如：查询集群lf-lan-ha1在时间范围2025-12-04 14:00:00到2025-12-04 14:10:10的CPU指标数据"
+            placeholder="发送待查询的集群、时间段、指标"
             :disabled="loading"
             @keyup.ctrl.enter="handleAnalyze"
+            class="query-input"
           />
-          <div class="input-tip">
-            💡 提示：支持自然语言查询，按 Ctrl+Enter 快速提交
-          </div>
-        </el-form-item>
-        
-        <el-form-item>
           <el-button
             type="primary"
             @click="handleAnalyze"
             :loading="loading"
             :disabled="!query.trim()"
-            size="large"
-            style="width: 100%;"
-          >
-            <el-icon v-if="!loading"><TrendCharts /></el-icon>
-            {{ loading ? '分析中...' : '开始分析' }}
+            class="send-button"
+            :icon="TrendCharts"
+            circle
+          />
+        </div>
+        <div class="input-tip">
+          💡 提示：支持自然语言查询，按 Ctrl+Enter 快速提交
+        </div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-if="loading" class="loading-section">
+        <el-icon class="loading-icon"><Loading /></el-icon>
+        <div class="loading-text">正在分析CPU数据，请稍候...</div>
+      </div>
+
+      <!-- 结果展示阶段 -->
+      <div v-if="hasResults" class="results-section">
+        <!-- 用户原始问题 -->
+        <div class="user-question">
+          <div class="question-label">您的查询：</div>
+          <div class="question-content">{{ userQuestion }}</div>
+        </div>
+
+        <!-- 图表展示 -->
+        <el-card class="chart-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><DataLine /></el-icon>
+              <span>CPU指标图表</span>
+              <el-button
+                v-if="chartData"
+                @click="refreshChart"
+                :icon="Refresh"
+                circle
+                size="small"
+                style="margin-left: auto;"
+              />
+            </div>
+          </template>
+          
+          <div
+            ref="chartContainer"
+            class="chart-container"
+            v-loading="loading"
+            element-loading-text="正在生成图表..."
+          ></div>
+        </el-card>
+
+        <!-- 分析结果 -->
+        <el-card class="analysis-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon><Document /></el-icon>
+              <span>AI分析结果</span>
+            </div>
+          </template>
+          
+          <div class="analysis-result">
+            <pre v-if="analysisResult">{{ analysisResult }}</pre>
+            <el-empty v-else description="暂无分析结果" />
+          </div>
+        </el-card>
+
+        <!-- 重新查询按钮 -->
+        <div class="new-query-section">
+          <el-button @click="resetQuery" type="primary" plain>
+            <el-icon><Search /></el-icon>
+            新查询
           </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, TrendCharts, DataLine, Document, Refresh } from '@element-plus/icons-vue'
+import { Search, TrendCharts, DataLine, Document, Refresh, Loading } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { cpuApi } from '../utils/api.js'
 
 // 响应式数据
 const query = ref('')
+const userQuestion = ref('')
 const loading = ref(false)
 const chartData = ref(null)
 const analysisResult = ref('')
@@ -136,6 +146,8 @@ const handleAnalyze = async () => {
     return
   }
 
+  // 保存用户问题
+  userQuestion.value = query.value
   loading.value = true
   
   try {
@@ -183,6 +195,17 @@ const handleAnalyze = async () => {
     ElMessage.error('分析失败，请检查网络连接或稍后重试')
   } finally {
     loading.value = false
+  }
+}
+
+const resetQuery = () => {
+  query.value = ''
+  userQuestion.value = ''
+  hasResults.value = false
+  chartData.value = null
+  analysisResult.value = ''
+  if (chartInstance.value) {
+    chartInstance.value.clear()
   }
 }
 
@@ -367,12 +390,147 @@ onUnmounted(cleanup)
 
 <style scoped>
 .cpu-analyzer {
-  max-width: 1200px;
-  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-.query-card {
-  margin-top: 2rem;
+.dialog-container {
+  width: 100%;
+  max-width: 900px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  padding: 2.5rem;
+  min-height: 400px;
+}
+
+.dialog-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dialog-title .el-icon {
+  font-size: 1.8rem;
+}
+
+/* 预备阶段样式 */
+.input-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+}
+
+.query-input {
+  width: 100%;
+}
+
+.query-input :deep(.el-textarea__inner) {
+  border-radius: 12px;
+  border: 2px solid #e4e7ed;
+  padding: 16px 60px 16px 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+}
+
+.query-input :deep(.el-textarea__inner):focus {
+  border-color: #409eff;
+  box-shadow: 0 0 0 3px rgba(64, 158, 255, 0.1);
+}
+
+.send-button {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #409eff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.send-button:hover {
+  background: #66b1ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+}
+
+.input-tip {
+  font-size: 12px;
+  color: #909399;
+  text-align: center;
+}
+
+/* 加载状态样式 */
+.loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+}
+
+.loading-icon {
+  font-size: 2rem;
+  color: #409eff;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 结果展示样式 */
+.results-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.user-question {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem;
+  border-left: 4px solid #409eff;
+}
+
+.question-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 0.5rem;
+}
+
+.question-content {
+  font-size: 14px;
+  color: #2c3e50;
+  line-height: 1.5;
 }
 
 .card-header {
@@ -383,22 +541,9 @@ onUnmounted(cleanup)
   color: #409eff;
 }
 
-.input-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 8px;
-}
-
-.results-section {
-  display: flex;
-  flex-direction: row;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
 .chart-card {
-  flex: 0 0 60%;
-  margin-bottom: 0;
+  border-radius: 12px;
+  border: 1px solid #e4e7ed;
 }
 
 .chart-container {
@@ -408,12 +553,12 @@ onUnmounted(cleanup)
 }
 
 .analysis-card {
-  flex: 0 0 38%;
-  margin-bottom: 0;
+  border-radius: 12px;
+  border: 1px solid #e4e7ed;
 }
 
 .analysis-result {
-  max-height: 400px;
+  max-height: 300px;
   overflow-y: auto;
 }
 
@@ -427,29 +572,43 @@ onUnmounted(cleanup)
   padding: 1rem;
   border-radius: 6px;
   border: 1px solid #e9ecef;
+  margin: 0;
 }
 
+.new-query-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
   .cpu-analyzer {
-    padding: 0 1rem;
+    padding: 1rem;
   }
   
-  .results-section {
-    flex-direction: column;
-    gap: 1rem;
+  .dialog-container {
+    padding: 1.5rem;
+    border-radius: 16px;
   }
   
-  .chart-card {
-    flex: none;
-  }
-  
-  .analysis-card {
-    flex: none;
+  .dialog-title {
+    font-size: 1.2rem;
   }
   
   .chart-container {
     height: 300px;
     min-height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dialog-container {
+    padding: 1rem;
+  }
+  
+  .input-wrapper {
+    max-width: 100%;
   }
 }
 </style>
