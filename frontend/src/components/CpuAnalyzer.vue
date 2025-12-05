@@ -5,7 +5,7 @@
       <!-- 标题 -->
       <div class="dialog-title">
         <el-icon><TrendCharts /></el-icon>
-        应用、集群、主机维度指标查询
+        运维自动化巡检
       </div>
 
       <!-- 预备阶段：输入区域 -->
@@ -15,7 +15,7 @@
             v-model="query"
             type="textarea"
             :rows="3"
-            placeholder="发送待查询的集群、时间段、指标"
+            placeholder="发送指定时间段、应用 / 集群 / 主机维度指标查询"
             :disabled="loading"
             @keyup.ctrl.enter="handleAnalyze"
             class="query-input"
@@ -81,7 +81,7 @@
             <template #header>
               <div class="card-header">
                 <el-icon><Document /></el-icon>
-                <span>AI分析结果</span>
+                <span>徒增突降、趋势分析、走势预测</span>
               </div>
             </template>
             
@@ -398,23 +398,24 @@ onUnmounted(cleanup)
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 1rem;
 }
 
 .dialog-container {
-  width: 100%;
-  max-width: 1200px;
+  width: 90vw;
+  min-width: 800px;
   background: white;
   padding: 2rem;
   display: flex;
   flex-direction: column;
-  border-radius: 20px;
+  border-radius: 32px;
 }
 
 .dialog-title {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.9rem;
   font-weight: bold;
-  color: #409eff;
+  color: #000000;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
