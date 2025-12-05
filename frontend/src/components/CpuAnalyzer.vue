@@ -1,45 +1,5 @@
 <template>
   <div class="cpu-analyzer">
-    <!-- 查询输入区域 -->
-    <el-card class="query-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <el-icon><Search /></el-icon>
-          <span>CPU数据查询</span>
-        </div>
-      </template>
-      
-      <el-form @submit.prevent="handleAnalyze">
-        <el-form-item>
-          <el-input
-            v-model="query"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入您的查询，例如：查询集群lf-lan-ha1在时间范围2025-12-04 14:00:00到2025-12-04 14:10:10的CPU指标数据"
-            :disabled="loading"
-            @keyup.ctrl.enter="handleAnalyze"
-          />
-          <div class="input-tip">
-            💡 提示：支持自然语言查询，按 Ctrl+Enter 快速提交
-          </div>
-        </el-form-item>
-        
-        <el-form-item>
-          <el-button 
-            type="primary" 
-            @click="handleAnalyze"
-            :loading="loading"
-            :disabled="!query.trim()"
-            size="large"
-            style="width: 100%;"
-          >
-            <el-icon v-if="!loading"><TrendCharts /></el-icon>
-            {{ loading ? '分析中...' : '开始分析' }}
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
     <!-- 结果展示区域 -->
     <div v-if="hasResults" class="results-section">
       <!-- 图表展示 -->
@@ -48,19 +8,19 @@
           <div class="card-header">
             <el-icon><DataLine /></el-icon>
             <span>CPU指标图表</span>
-            <el-button 
-              v-if="chartData" 
-              @click="refreshChart" 
-              :icon="Refresh" 
-              circle 
+            <el-button
+              v-if="chartData"
+              @click="refreshChart"
+              :icon="Refresh"
+              circle
               size="small"
               style="margin-left: auto;"
             />
           </div>
         </template>
         
-        <div 
-          ref="chartContainer" 
+        <div
+          ref="chartContainer"
           class="chart-container"
           v-loading="loading"
           element-loading-text="正在生成图表..."
@@ -84,11 +44,51 @@
     </div>
 
     <!-- 空状态 -->
-    <el-empty 
-      v-if="!hasResults && !loading" 
+    <el-empty
+      v-if="!hasResults && !loading"
       description="请输入查询条件开始分析"
       :image-size="200"
     />
+
+    <!-- 查询输入区域 -->
+    <el-card class="query-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <el-icon><Search /></el-icon>
+          <span>应用、集群、主机维度指标查询</span>
+        </div>
+      </template>
+      
+      <el-form @submit.prevent="handleAnalyze">
+        <el-form-item>
+          <el-input
+            v-model="query"
+            type="textarea"
+            :rows="3"
+            placeholder="请输入您的查询，例如：查询集群lf-lan-ha1在时间范围2025-12-04 14:00:00到2025-12-04 14:10:10的CPU指标数据"
+            :disabled="loading"
+            @keyup.ctrl.enter="handleAnalyze"
+          />
+          <div class="input-tip">
+            💡 提示：支持自然语言查询，按 Ctrl+Enter 快速提交
+          </div>
+        </el-form-item>
+        
+        <el-form-item>
+          <el-button
+            type="primary"
+            @click="handleAnalyze"
+            :loading="loading"
+            :disabled="!query.trim()"
+            size="large"
+            style="width: 100%;"
+          >
+            <el-icon v-if="!loading"><TrendCharts /></el-icon>
+            {{ loading ? '分析中...' : '开始分析' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
   </div>
 </template>
 
@@ -372,7 +372,7 @@ onUnmounted(cleanup)
 }
 
 .query-card {
-  margin-bottom: 2rem;
+  margin-top: 2rem;
 }
 
 .card-header {
@@ -391,12 +391,14 @@ onUnmounted(cleanup)
 
 .results-section {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 2rem;
+  margin-bottom: 2rem;
 }
 
 .chart-card {
-  margin-bottom: 1rem;
+  flex: 0 0 60%;
+  margin-bottom: 0;
 }
 
 .chart-container {
@@ -406,7 +408,8 @@ onUnmounted(cleanup)
 }
 
 .analysis-card {
-  margin-bottom: 1rem;
+  flex: 0 0 38%;
+  margin-bottom: 0;
 }
 
 .analysis-result {
@@ -429,6 +432,19 @@ onUnmounted(cleanup)
 @media (max-width: 768px) {
   .cpu-analyzer {
     padding: 0 1rem;
+  }
+  
+  .results-section {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .chart-card {
+    flex: none;
+  }
+  
+  .analysis-card {
+    flex: none;
   }
   
   .chart-container {

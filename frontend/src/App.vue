@@ -3,7 +3,7 @@
     <div class="cpu-analyzer-container">
       <h1>
         <el-icon><TrendCharts /></el-icon>
-        CPU数据分析系统
+        自动化巡检系统
       </h1>
       <CpuAnalyzer />
     </div>
