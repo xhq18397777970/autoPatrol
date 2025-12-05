@@ -13,5 +13,6 @@ import CpuAnalyzer from './components/CpuAnalyzer.vue'
 #app {
   margin: 0;
   padding: 0;
+  background: white;
 }
 </style>

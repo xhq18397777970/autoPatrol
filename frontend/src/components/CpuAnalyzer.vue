@@ -49,45 +49,48 @@
           <div class="question-content">{{ userQuestion }}</div>
         </div>
 
-        <!-- 图表展示 -->
-        <el-card class="chart-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon><DataLine /></el-icon>
-              <span>CPU指标图表</span>
-              <el-button
-                v-if="chartData"
-                @click="refreshChart"
-                :icon="Refresh"
-                circle
-                size="small"
-                style="margin-left: auto;"
-              />
-            </div>
-          </template>
-          
-          <div
-            ref="chartContainer"
-            class="chart-container"
-            v-loading="loading"
-            element-loading-text="正在生成图表..."
-          ></div>
-        </el-card>
+        <!-- 图表和分析并列展示 -->
+        <div class="charts-and-analysis">
+          <!-- 图表展示 -->
+          <el-card class="chart-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <el-icon><DataLine /></el-icon>
+                <span>CPU指标图表</span>
+                <el-button
+                  v-if="chartData"
+                  @click="refreshChart"
+                  :icon="Refresh"
+                  circle
+                  size="small"
+                  style="margin-left: auto;"
+                />
+              </div>
+            </template>
+            
+            <div
+              ref="chartContainer"
+              class="chart-container"
+              v-loading="loading"
+              element-loading-text="正在生成图表..."
+            ></div>
+          </el-card>
 
-        <!-- 分析结果 -->
-        <el-card class="analysis-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <el-icon><Document /></el-icon>
-              <span>AI分析结果</span>
+          <!-- 分析结果 -->
+          <el-card class="analysis-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <el-icon><Document /></el-icon>
+                <span>AI分析结果</span>
+              </div>
+            </template>
+            
+            <div class="analysis-result">
+              <pre v-if="analysisResult">{{ analysisResult }}</pre>
+              <el-empty v-else description="暂无分析结果" />
             </div>
-          </template>
-          
-          <div class="analysis-result">
-            <pre v-if="analysisResult">{{ analysisResult }}</pre>
-            <el-empty v-else description="暂无分析结果" />
-          </div>
-        </el-card>
+          </el-card>
+        </div>
 
         <!-- 重新查询按钮 -->
         <div class="new-query-section">
@@ -391,21 +394,20 @@ onUnmounted(cleanup)
 <style scoped>
 .cpu-analyzer {
   min-height: 100vh;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .dialog-container {
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   background: white;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
-  padding: 2.5rem;
-  min-height: 400px;
 }
 
 .dialog-title {
@@ -514,6 +516,13 @@ onUnmounted(cleanup)
   gap: 1.5rem;
 }
 
+.charts-and-analysis {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  flex: 1;
+}
+
 .user-question {
   background: #f8f9fa;
   border-radius: 12px;
@@ -542,9 +551,10 @@ onUnmounted(cleanup)
 }
 
 .chart-card {
-  border-radius: 12px;
-  border: 1px solid #e4e7ed;
+  flex: 0 0 50%;
+  margin-bottom: 0;
 }
+
 
 .chart-container {
   width: 100%;
@@ -554,6 +564,12 @@ onUnmounted(cleanup)
 
 .analysis-card {
   border-radius: 12px;
+.analysis-card {
+  flex: 0 0 50%;
+  margin-bottom: 0;
+  border-radius: 12px;
+  border: 1px solid #e4e7ed;
+}
   border: 1px solid #e4e7ed;
 }
 
@@ -594,6 +610,10 @@ onUnmounted(cleanup)
   
   .dialog-title {
     font-size: 1.2rem;
+  }
+  
+  .charts-and-analysis {
+    flex-direction: column;
   }
   
   .chart-container {
